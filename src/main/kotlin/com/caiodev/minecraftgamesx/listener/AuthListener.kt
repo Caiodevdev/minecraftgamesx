@@ -1,6 +1,7 @@
 package com.caiodev.minecraftgamesx.auth.listener
 
 import com.caiodev.minecraftgamesx.auth.AuthManager
+import com.caiodev.minecraftgamesx.lobby.InventoryManager
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -10,6 +11,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -18,15 +20,13 @@ class AuthListener(private val plugin: JavaPlugin, private val authManager: Auth
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
         if (authManager.isRegistered(player)) {
-            player.sendMessage("§eMinecraftGamesX §7- Autenticação")
-            player.sendMessage("§7Bem-vindo de volta, §e${player.name}§7!")
-            player.sendMessage("§7Para fazer login, use o comando §b/login <sua senha>.")
-            player.sendTitle("§eMinecraftGamesX!", "§7Use §b/login <sua senha>", 10, 70, 20)
+            player.sendMessage("§f✦ §7Bem-vindo de volta, §e§l${player.name}§7!")
+            player.sendMessage("§7➜ Use §b§l/login <sua senha> §7para acessar o §e§lMinecraftGamesX§7.")
+            player.sendTitle("§e✦ §lMinecraftGamesX", "§7Use §b§l/login <sua senha>", 10, 70, 20)
         } else {
-            player.sendMessage("§eMinecraftGamesX §7- Autenticação")
-            player.sendMessage("§7Saudações, §e${player.name}§7!")
-            player.sendMessage("§7Para se registrar, use o comando §b/register <sua senha> <confirme sua senha>.")
-            player.sendTitle("§eBem-vindo ao MinecraftGamesX!", "§7Use §b/register <senha> <confirme>", 10, 70, 20)
+            player.sendMessage("§f✦ §7Saudações, §e§l${player.name}§7! Bem-vindo ao servidor!")
+            player.sendMessage("§7➜ Use §b§l/register <senha> <confirme> §7para se registrar no §e§lMinecraftGamesX§7.")
+            player.sendTitle("§e✦ §lBem-vindo ao MinecraftGamesX!", "§7Use §b§l/register <senha> <confirme>", 10, 70, 20)
         }
 
         // Iniciar ActionBar para lembretes contínuos
@@ -34,11 +34,12 @@ class AuthListener(private val plugin: JavaPlugin, private val authManager: Auth
             override fun run() {
                 if (!authManager.isAuthenticated(player)) {
                     if (authManager.isRegistered(player)) {
-                        player.sendActionBar(Component.text("§7Registre-se com §b/login <sua senha>"))
+                        player.sendActionBar(Component.text("§f✦ §7Use §b§l/login <sua senha> §7para entrar"))
                     } else {
-                        player.sendActionBar(Component.text("§7Registre-se com §b/register <senha> <confirme>"))
+                        player.sendActionBar(Component.text("§f✦ §7Use §b§l/register <senha> <confirme> §7para começar"))
                     }
                 } else {
+                    InventoryManager.setupPlayerInventory(player)
                     cancel()
                 }
             }
@@ -66,9 +67,14 @@ class AuthListener(private val plugin: JavaPlugin, private val authManager: Auth
             val command = event.message.lowercase()
             if (!command.startsWith("/login") && !command.startsWith("/register")) {
                 event.isCancelled = true
-                player.sendMessage("§eMinecraftGamesX §7- Autenticação")
-                player.sendMessage("§7Você precisa se autenticar primeiro!")
+                player.sendMessage("§f✦ §7Você precisa se autenticar primeiro!")
+                player.sendMessage("§7➜ Use §b§l/login <sua senha> §7ou §b§l/register <senha> <confirme>.")
             }
         }
+    }
+
+    @EventHandler
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        authManager.unauthenticate(event.player)
     }
 }

@@ -72,6 +72,7 @@
                                     <include>mysql:mysql-connector-java</include>
                                     <include>com.zaxxer:HikariCP</include>
                                     <include>at.favre.lib:bcrypt</include>
+                                    <include>at.favre.lib:bytes</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -86,6 +87,10 @@
                                 <relocation>
                                     <pattern>at.favre.lib.crypto.bcrypt</pattern>
                                     <shadedPattern>com.caiodev.minecraftgamesx.bcrypt</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>at.favre.lib.bytes</pattern>
+                                    <shadedPattern>com.caiodev.minecraftgamesx.bytes</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -156,6 +161,11 @@
             <groupId>at.favre.lib</groupId>
             <artifactId>bcrypt</artifactId>
             <version>0.10.2</version>
+        </dependency>
+        <dependency>
+            <groupId>at.favre.lib</groupId>
+            <artifactId>bytes</artifactId>
+            <version>1.6.0</version>
         </dependency>
     </dependencies>
 </project>
