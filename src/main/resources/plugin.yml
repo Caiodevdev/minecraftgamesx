@@ -1,0 +1,11 @@
+name: minecraftgamesx
+version: '1.0-SNAPSHOT'
+main: com.caiodev.minecraftgamesx.Minecraftgamesx
+api-version: '1.21'
+commands:
+  register:
+    description: Registra um jogador no servidor
+    usage: /<command> <senha> <confirme-senha>
+  login:
+    description: Faz login de um jogador registrado
+    usage: /<command> <senha>
