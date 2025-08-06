@@ -2,6 +2,7 @@ name: minecraftgamesx
 version: '1.0-SNAPSHOT'
 main: com.caiodev.minecraftgamesx.Minecraftgamesx
 api-version: '1.21'
+depend: [Citizens]
 commands:
   register:
     description: Registra um jogador no servidor
@@ -9,3 +10,15 @@ commands:
   login:
     description: Faz login de um jogador registrado
     usage: /<command> <senha>
+  addnpc:
+    description: Adiciona um NPC Jogar Agora na localização do jogador
+    usage: /<command>
+    permission: minecraftgamesx.admin
+  removenpc:
+    description: Remove todos os NPCs Jogar Agora
+    usage: /<command>
+    permission: minecraftgamesx.admin
+permissions:
+  minecraftgamesx.admin:
+    description: Permite usar comandos administrativos
+    default: op

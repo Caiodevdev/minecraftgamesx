@@ -4,6 +4,8 @@ import com.caiodev.minecraftgamesx.auth.AuthManager
 import com.caiodev.minecraftgamesx.auth.command.LoginCommand
 import com.caiodev.minecraftgamesx.auth.command.RegisterCommand
 import com.caiodev.minecraftgamesx.auth.listener.AuthListener
+import com.caiodev.minecraftgamesx.command.AddNPCCommand
+import com.caiodev.minecraftgamesx.command.RemoveNPCCommand
 import com.caiodev.minecraftgamesx.core.config.ConfigManager
 import com.caiodev.minecraftgamesx.core.database.DatabaseManager
 import com.caiodev.minecraftgamesx.lobby.LobbyListener
@@ -23,6 +25,8 @@ class Minecraftgamesx : JavaPlugin() {
             // Registrar comandos
             getCommand("register")?.setExecutor(RegisterCommand(authManager, this))
             getCommand("login")?.setExecutor(LoginCommand(authManager, this))
+            getCommand("addnpc")?.setExecutor(AddNPCCommand(this))
+            getCommand("removenpc")?.setExecutor(RemoveNPCCommand(this))
             // Registrar listeners
             server.pluginManager.registerEvents(AuthListener(this, authManager), this)
             server.pluginManager.registerEvents(LobbyListener(this, authManager), this)

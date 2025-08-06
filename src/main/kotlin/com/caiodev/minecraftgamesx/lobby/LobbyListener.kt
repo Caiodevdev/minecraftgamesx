@@ -1,6 +1,8 @@
 package com.caiodev.minecraftgamesx.lobby
 
 import com.caiodev.minecraftgamesx.auth.AuthManager
+import net.citizensnpcs.api.event.NPCLeftClickEvent
+import net.citizensnpcs.api.event.NPCRightClickEvent
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -16,7 +18,8 @@ class LobbyListener(private val plugin: JavaPlugin, private val authManager: Aut
         "§e✦ §lMeu Perfil",
         "§e✦ §lMenu do SkyWars",
         "§e✦ §lColetáveis",
-        "§e✦ §lSelecionar Lobby"
+        "§e✦ §lSelecionar Lobby",
+        "§b✦ §lJogar Agora"
     )
 
     private val fixedSlots = listOf(0, 1, 2, 4, 7, 8)
@@ -49,6 +52,44 @@ class LobbyListener(private val plugin: JavaPlugin, private val authManager: Aut
     }
 
     @EventHandler
+    fun onNPCRightClick(event: NPCRightClickEvent) {
+        val player = event.clicker
+        if (!authManager.isAuthenticated(player)) {
+            event.isCancelled = true
+            player.sendMessage("§f✦ §7Você precisa estar §e§lautenticado §7para interagir com o NPC!")
+            plugin.logger.info("Interação bloqueada: ${player.name} não está autenticado") // Log de depuração
+            return
+        }
+
+        if (NPCManager.isNPC(event.npc)) {
+            event.isCancelled = true
+            NPCManager.openNPCMenu(player)
+            plugin.logger.info("Interação com botão direito no NPC 'Jogar Agora' por ${player.name}, ID do NPC: ${event.npc.id}") // Log de depuração
+        } else {
+            plugin.logger.info("NPC clicado não é 'Jogar Agora': ${event.npc.name}, ID: ${event.npc.id}") // Log de depuração
+        }
+    }
+
+    @EventHandler
+    fun onNPCLeftClick(event: NPCLeftClickEvent) {
+        val player = event.clicker
+        if (!authManager.isAuthenticated(player)) {
+            event.isCancelled = true
+            player.sendMessage("§f✦ §7Você precisa estar §e§lautenticado §7para interagir com o NPC!")
+            plugin.logger.info("Interação bloqueada: ${player.name} não está autenticado") // Log de depuração
+            return
+        }
+
+        if (NPCManager.isNPC(event.npc)) {
+            event.isCancelled = true
+            NPCManager.openNPCMenu(player)
+            plugin.logger.info("Interação com botão esquerdo no NPC 'Jogar Agora' por ${player.name}, ID do NPC: ${event.npc.id}") // Log de depuração
+        } else {
+            plugin.logger.info("NPC clicado não é 'Jogar Agora': ${event.npc.name}, ID: ${event.npc.id}") // Log de depuração
+        }
+    }
+
+    @EventHandler
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? org.bukkit.entity.Player ?: return
         if (!authManager.isAuthenticated(player)) return
@@ -61,7 +102,7 @@ class LobbyListener(private val plugin: JavaPlugin, private val authManager: Aut
             return
         }
 
-        // Bloquear qualquer interação envolvendo itens fixos
+        // Bloquear movimentação de itens fixos na hotbar
         val slot = event.slot
         val currentItem = event.currentItem
         val cursorItem = event.cursor
