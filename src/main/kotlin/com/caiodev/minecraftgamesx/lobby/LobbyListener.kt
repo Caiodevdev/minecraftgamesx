@@ -11,6 +11,16 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.plugin.java.JavaPlugin
 
 class LobbyListener(private val plugin: JavaPlugin, private val authManager: AuthManager) : Listener {
+    private val customInventoryTitles = listOf(
+        "§e✦ §lSelecionar Jogo",
+        "§e✦ §lMeu Perfil",
+        "§e✦ §lMenu do SkyWars",
+        "§e✦ §lColetáveis",
+        "§e✦ §lSelecionar Lobby"
+    )
+
+    private val fixedSlots = listOf(0, 1, 2, 4, 7, 8)
+
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {
         val player = event.player
@@ -42,10 +52,31 @@ class LobbyListener(private val plugin: JavaPlugin, private val authManager: Aut
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as? org.bukkit.entity.Player ?: return
         if (!authManager.isAuthenticated(player)) return
-        val slot = event.slot
-        if (slot in listOf(0, 1, 2, 4, 7, 8)) {
+
+        // Bloquear cliques em inventários personalizados
+        val inventoryTitle = event.view.title().let { LegacyComponentSerializer.legacySection().serialize(it) }
+        if (customInventoryTitles.contains(inventoryTitle)) {
             event.isCancelled = true
-            plugin.logger.info("Tentativa de mover item fixo no slot $slot bloqueada.") // Log de depuração
+            plugin.logger.info("Clique bloqueado no menu: $inventoryTitle") // Log de depuração
+            return
+        }
+
+        // Bloquear qualquer interação envolvendo itens fixos
+        val slot = event.slot
+        val currentItem = event.currentItem
+        val cursorItem = event.cursor
+        val action = event.action
+        val hotbarSlot = event.hotbarButton.takeIf { it != -1 } // Verifica tecla numérica
+
+        if (event.clickedInventory == player.inventory && (
+                    slot in fixedSlots ||
+                            hotbarSlot in fixedSlots ||
+                            (currentItem != null && isFixedItem(currentItem)) ||
+                            (cursorItem != null && isFixedItem(cursorItem)) ||
+                            (action.toString().contains("SWAP") && hotbarSlot != -1 && hotbarSlot in fixedSlots)
+                    )) {
+            event.isCancelled = true
+            plugin.logger.info("Tentativa de mover item fixo no slot $slot (hotbarButton: $hotbarSlot, ação: $action) bloqueada.") // Log de depuração
         }
     }
 
@@ -53,9 +84,22 @@ class LobbyListener(private val plugin: JavaPlugin, private val authManager: Aut
     fun onInventoryDrag(event: InventoryDragEvent) {
         val player = event.whoClicked as? org.bukkit.entity.Player ?: return
         if (!authManager.isAuthenticated(player)) return
-        if (event.inventorySlots.any { it in listOf(0, 1, 2, 4, 7, 8) }) {
+
+        // Bloquear arrastar em inventários personalizados
+        val inventoryTitle = event.view.title().let { LegacyComponentSerializer.legacySection().serialize(it) }
+        if (customInventoryTitles.contains(inventoryTitle)) {
             event.isCancelled = true
-            plugin.logger.info("Tentativa de arrastar item fixo bloqueada.") // Log de depuração
+            plugin.logger.info("Arrastar bloqueado no menu: $inventoryTitle") // Log de depuração
+            return
+        }
+
+        // Bloquear arrastar itens fixos ou para slots fixos
+        if (event.inventory == player.inventory && (
+                    event.inventorySlots.any { slot -> slot in fixedSlots } ||
+                            event.newItems.values.any { item -> isFixedItem(item) }
+                    )) {
+            event.isCancelled = true
+            plugin.logger.info("Tentativa de arrastar item fixo ou para slot fixo bloqueada.") // Log de depuração
         }
     }
 
@@ -63,9 +107,21 @@ class LobbyListener(private val plugin: JavaPlugin, private val authManager: Aut
     fun onPlayerDropItem(event: PlayerDropItemEvent) {
         if (!authManager.isAuthenticated(event.player)) return
         val slot = event.player.inventory.heldItemSlot
-        if (slot in listOf(0, 1, 2, 4, 7, 8)) {
+        if (slot in fixedSlots || isFixedItem(event.itemDrop.itemStack)) {
             event.isCancelled = true
             plugin.logger.info("Tentativa de descartar item fixo no slot $slot bloqueada.") // Log de depuração
         }
+    }
+
+    private fun isFixedItem(item: org.bukkit.inventory.ItemStack): Boolean {
+        val itemName = item.itemMeta?.displayName()?.let {
+            LegacyComponentSerializer.legacySection().serialize(it)
+        } ?: return false
+        return itemName.contains("Selecionar Jogo") ||
+                itemName.contains("Meu Perfil") ||
+                itemName.contains("Menu do SkyWars") ||
+                itemName.contains("Coletáveis") ||
+                itemName.contains("Jogadores:") ||
+                itemName.contains("Selecionar Lobby")
     }
 }

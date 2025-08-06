@@ -2,6 +2,7 @@ package com.caiodev.minecraftgamesx.auth.listener
 
 import com.caiodev.minecraftgamesx.auth.AuthManager
 import com.caiodev.minecraftgamesx.lobby.InventoryManager
+import com.caiodev.minecraftgamesx.lobby.ScoreboardManager
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -40,6 +41,7 @@ class AuthListener(private val plugin: JavaPlugin, private val authManager: Auth
                     }
                 } else {
                     InventoryManager.setupPlayerInventory(player)
+                    ScoreboardManager.setupScoreboard(player, plugin)
                     cancel()
                 }
             }
@@ -76,5 +78,6 @@ class AuthListener(private val plugin: JavaPlugin, private val authManager: Auth
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         authManager.unauthenticate(event.player)
+        ScoreboardManager.removeScoreboard(event.player)
     }
 }

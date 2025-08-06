@@ -21,8 +21,8 @@ class Minecraftgamesx : JavaPlugin() {
             databaseManager = DatabaseManager(configManager.getDatabaseConfig())
             authManager = AuthManager(databaseManager!!)
             // Registrar comandos
-            getCommand("register")?.setExecutor(RegisterCommand(authManager))
-            getCommand("login")?.setExecutor(LoginCommand(authManager))
+            getCommand("register")?.setExecutor(RegisterCommand(authManager, this))
+            getCommand("login")?.setExecutor(LoginCommand(authManager, this))
             // Registrar listeners
             server.pluginManager.registerEvents(AuthListener(this, authManager), this)
             server.pluginManager.registerEvents(LobbyListener(this, authManager), this)

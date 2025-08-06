@@ -2,12 +2,14 @@ package com.caiodev.minecraftgamesx.auth.command
 
 import com.caiodev.minecraftgamesx.auth.AuthManager
 import com.caiodev.minecraftgamesx.lobby.InventoryManager
+import com.caiodev.minecraftgamesx.lobby.ScoreboardManager
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.bukkit.plugin.java.JavaPlugin
 
-class RegisterCommand(private val authManager: AuthManager) : CommandExecutor {
+class RegisterCommand(private val authManager: AuthManager, private val plugin: JavaPlugin) : CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (sender !is Player) {
             sender.sendMessage("§cEste comando é apenas para jogadores!")
@@ -41,6 +43,7 @@ class RegisterCommand(private val authManager: AuthManager) : CommandExecutor {
         if (authManager.registerPlayer(sender, args[0])) {
             authManager.authenticate(sender)
             InventoryManager.setupPlayerInventory(sender)
+            ScoreboardManager.setupScoreboard(sender, plugin)
             sender.sendMessage("§f✦ §7Registro concluído com §e§lsucesso§7!")
             sender.sendMessage("§7➜ Você está §b§llogado §7e pronto para jogar no §e§lMinecraftGamesX§7!")
             sender.sendTitle("§e✦ §lRegistro Concluído!", "§7Bem-vindo ao §e§lMinecraftGamesX§7!", 10, 70, 20)
