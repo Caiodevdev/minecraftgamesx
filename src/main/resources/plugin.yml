@@ -18,7 +18,35 @@ commands:
     description: Remove todos os NPCs Jogar Agora
     usage: /<command>
     permission: minecraftgamesx.admin
+  setlevel:
+    description: Define o nível de um jogador
+    usage: /<command> <jogador> <nível>
+  addxp:
+    description: Adiciona experiência a um jogador
+    usage: /<command> <jogador> <xp>
+  addcoins:
+    description: Adiciona coins a um jogador
+    usage: /<command> <jogador> <quantidade>
+  tags:
+    description: Lista todas as tags disponíveis
+    usage: /<command>
+  tagadmin:
+    description: Gerencia tags dos jogadores
+    usage: /<command> <set|remove|list> [jogador] [tag]
+    permission: lobby.tagadmin
 permissions:
   minecraftgamesx.admin:
     description: Permite usar comandos administrativos
+    default: op
+  lobby.setlevel:
+    description: Permite definir o nível de um jogador
+    default: op
+  lobby.addxp:
+    description: Permite adicionar experiência a um jogador
+    default: op
+  lobby.addcoins:
+    description: Permite adicionar coins a um jogador
+    default: op
+  lobby.tagadmin:
+    description: Permite gerenciar tags dos jogadores
     default: op

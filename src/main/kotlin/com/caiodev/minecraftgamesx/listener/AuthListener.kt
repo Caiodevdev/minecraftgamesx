@@ -3,6 +3,7 @@ package com.caiodev.minecraftgamesx.auth.listener
 import com.caiodev.minecraftgamesx.auth.AuthManager
 import com.caiodev.minecraftgamesx.lobby.InventoryManager
 import com.caiodev.minecraftgamesx.lobby.ScoreboardManager
+import com.caiodev.minecraftgamesx.Minecraftgamesx
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -14,9 +15,11 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.plugin.java.JavaPlugin
 
-class AuthListener(private val plugin: JavaPlugin, private val authManager: AuthManager) : Listener {
+class AuthListener(
+    private val plugin: Minecraftgamesx,
+    private val authManager: AuthManager
+) : Listener {
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
@@ -41,7 +44,7 @@ class AuthListener(private val plugin: JavaPlugin, private val authManager: Auth
                     }
                 } else {
                     InventoryManager.setupPlayerInventory(player)
-                    ScoreboardManager.setupScoreboard(player, plugin)
+                    ScoreboardManager.setupScoreboard(player, plugin, plugin.databaseManager!!)
                     cancel()
                 }
             }

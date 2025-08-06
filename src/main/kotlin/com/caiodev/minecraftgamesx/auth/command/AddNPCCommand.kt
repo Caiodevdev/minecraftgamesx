@@ -1,4 +1,4 @@
-package com.caiodev.minecraftgamesx.command
+package com.caiodev.minecraftgamesx.commands
 
 import com.caiodev.minecraftgamesx.lobby.NPCManager
 import org.bukkit.command.Command

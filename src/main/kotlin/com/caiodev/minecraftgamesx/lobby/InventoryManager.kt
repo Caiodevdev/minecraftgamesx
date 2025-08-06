@@ -1,5 +1,6 @@
 package com.caiodev.minecraftgamesx.lobby
 
+import com.caiodev.minecraftgamesx.Minecraftgamesx
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -7,6 +8,7 @@ import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 
 object InventoryManager {
     private const val SKYWARS_MENU_KEY = "skywars_menu"
@@ -89,15 +91,23 @@ object InventoryManager {
     }
 
     fun openProfileMenu(player: Player) {
+        val plugin = player.server.pluginManager.getPlugin("minecraftgamesx") as Minecraftgamesx
+        val databaseManager = plugin.databaseManager!!
+        val level = databaseManager.getPlayerLevel(player.uniqueId)
+        val xp = databaseManager.getPlayerXP(player.uniqueId)
+        val coins = databaseManager.getPlayerCoins(player.uniqueId)
         val inventory = Bukkit.createInventory(null, 27, Component.text("§e✦ §lMeu Perfil"))
         val statsItem = createItem(
             Material.BOOK,
             "§e§lEstatísticas",
             listOf(
+                "§7Nível: §e$level",
+                "§7XP: §e$xp/500",
+                "§7Coins: §e$coins",
                 "§7Vitórias: §f0",
                 "§7Mortes: §f0",
-                "§7Moedas: §f0",
-                "§7§o(Em desenvolvimento)")
+                "§7§o(Em desenvolvimento)"
+            )
         )
         inventory.setItem(13, statsItem)
         player.openInventory(inventory)
@@ -165,5 +175,17 @@ object InventoryManager {
             player.sendMessage("§f✦ §7Jogadores agora estão §e§lVISÍVEIS§7.")
         }
         player.updateInventory()
+    }
+
+    fun isFixedItem(item: ItemStack): Boolean {
+        val itemName = item.itemMeta?.displayName()?.let {
+            LegacyComponentSerializer.legacySection().serialize(it)
+        } ?: return false
+        return itemName.contains("Selecionar Jogo") ||
+                itemName.contains("Meu Perfil") ||
+                itemName.contains("Menu do SkyWars") ||
+                itemName.contains("Coletáveis") ||
+                itemName.contains("Jogadores:") ||
+                itemName.contains("Selecionar Lobby")
     }
 }
