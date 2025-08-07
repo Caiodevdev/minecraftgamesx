@@ -4,25 +4,30 @@ import com.caiodev.minecraftgamesx.auth.AuthManager
 import com.caiodev.minecraftgamesx.auth.command.LoginCommand
 import com.caiodev.minecraftgamesx.auth.command.RegisterCommand
 import com.caiodev.minecraftgamesx.auth.listener.AuthListener
+import com.caiodev.minecraftgamesx.collectibles.PetManager
+import com.caiodev.minecraftgamesx.collectibles.ParticleManager
 import com.caiodev.minecraftgamesx.command.LevelCommand
 import com.caiodev.minecraftgamesx.command.RemoveNPCCommand
 import com.caiodev.minecraftgamesx.commands.AddCoinsCommand
 import com.caiodev.minecraftgamesx.commands.AddNPCCommand
 import com.caiodev.minecraftgamesx.commands.AddXPCommand
-import com.caiodev.minecraftgamesx.commands.TagsCommand
 import com.caiodev.minecraftgamesx.commands.TagAdminCommand
+import com.caiodev.minecraftgamesx.commands.TagsCommand
 import com.caiodev.minecraftgamesx.core.config.ConfigManager
 import com.caiodev.minecraftgamesx.core.database.DatabaseManager
 import com.caiodev.minecraftgamesx.lobby.LobbyListener
 import com.caiodev.minecraftgamesx.lobby.ScoreboardManager
 import com.caiodev.minecraftgamesx.listener.ChatListener
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.logging.Level
 
 class Minecraftgamesx : JavaPlugin() {
     lateinit var configManager: ConfigManager
     var databaseManager: DatabaseManager? = null
     lateinit var authManager: AuthManager
     val scoreboard: ScoreboardManager = ScoreboardManager
+    lateinit var petManager: PetManager
+    lateinit var particleManager: ParticleManager
 
     override fun onEnable() {
         logger.info("MinecraftGamesX iniciado com sucesso!")
@@ -30,6 +35,8 @@ class Minecraftgamesx : JavaPlugin() {
         try {
             databaseManager = DatabaseManager(configManager.getDatabaseConfig())
             authManager = AuthManager(databaseManager!!)
+            petManager = PetManager(this, databaseManager!!)
+            particleManager = ParticleManager(this, databaseManager!!)
             // Registrar comandos
             getCommand("register")?.setExecutor(RegisterCommand(authManager, this))
             getCommand("login")?.setExecutor(LoginCommand(authManager, this))
@@ -43,17 +50,19 @@ class Minecraftgamesx : JavaPlugin() {
             logger.info("Comandos /setlevel, /addxp, /addcoins, /tags e /tagadmin registrados com sucesso.")
             // Registrar listeners
             server.pluginManager.registerEvents(AuthListener(this, authManager), this)
-            server.pluginManager.registerEvents(LobbyListener(this, authManager, databaseManager!!, scoreboard), this)
+            server.pluginManager.registerEvents(LobbyListener(this, authManager, databaseManager!!, scoreboard, petManager, particleManager), this)
             server.pluginManager.registerEvents(ChatListener(databaseManager!!), this)
             server.messenger.registerOutgoingPluginChannel(this, "BungeeCord")
         } catch (e: Exception) {
-            logger.severe("Erro ao inicializar o DatabaseManager: ${e.message}")
+            logger.log(Level.SEVERE, "Erro ao inicializar o DatabaseManager: ${e.message}", e)
             server.pluginManager.disablePlugin(this)
         }
     }
 
     override fun onDisable() {
         logger.info("MinecraftGamesX desativado.")
+        petManager.cleanup()
+        particleManager.cleanup()
         databaseManager?.close()
         server.messenger.unregisterOutgoingPluginChannel(this)
     }

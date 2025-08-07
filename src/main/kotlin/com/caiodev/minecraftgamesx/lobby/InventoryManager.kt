@@ -1,6 +1,7 @@
 package com.caiodev.minecraftgamesx.lobby
 
 import com.caiodev.minecraftgamesx.Minecraftgamesx
+import com.caiodev.minecraftgamesx.collectibles.CollectiblesMenu
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -9,6 +10,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import org.bukkit.enchantments.Enchantment
 
 object InventoryManager {
     private const val SKYWARS_MENU_KEY = "skywars_menu"
@@ -43,7 +45,7 @@ object InventoryManager {
             Material.EMERALD,
             "§e✦ §lMenu do SkyWars",
             listOf("§7Clique para acessar opções do SkyWars.", "§7§o(Em desenvolvimento)")
-        ).apply { addUnsafeEnchantment(org.bukkit.enchantments.Enchantment.EFFICIENCY, 1) })
+        ).apply { addUnsafeEnchantment(Enchantment.EFFICIENCY, 1) })
 
         // Slot 5: Baú - Coletáveis
         inventory.setItem(4, createItem(
@@ -125,14 +127,7 @@ object InventoryManager {
     }
 
     fun openCollectiblesMenu(player: Player) {
-        val inventory = Bukkit.createInventory(null, 27, Component.text("§e✦ §lColetáveis"))
-        val placeholderItem = createItem(
-            Material.BARRIER,
-            "§e§lColetáveis",
-            listOf("§7Em breve: pets, skins e efeitos!", "§7§o(Em desenvolvimento)")
-        )
-        inventory.setItem(13, placeholderItem)
-        player.openInventory(inventory)
+        CollectiblesMenu.openCollectiblesMenu(player)
     }
 
     fun openLobbySelectorMenu(player: Player) {

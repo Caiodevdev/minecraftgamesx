@@ -33,6 +33,7 @@ class DatabaseManager(config: DatabaseConfig) {
     private fun createTables() {
         dataSource.connection.use { connection ->
             try {
+                // Criar tabela players
                 connection.createStatement().use { statement ->
                     statement.execute("""
                         CREATE TABLE IF NOT EXISTS players (
@@ -46,6 +47,7 @@ class DatabaseManager(config: DatabaseConfig) {
                     """)
                     Bukkit.getLogger().info("Tabela 'players' verificada/criada no banco de dados $databaseName.")
                 }
+                // Criar tabela player_levels
                 connection.createStatement().use { statement ->
                     statement.execute("""
                         CREATE TABLE IF NOT EXISTS player_levels (
@@ -57,6 +59,7 @@ class DatabaseManager(config: DatabaseConfig) {
                     """)
                     Bukkit.getLogger().info("Tabela 'player_levels' verificada/criada no banco de dados $databaseName.")
                 }
+                // Criar tabela player_tags
                 connection.createStatement().use { statement ->
                     statement.execute("""
                         CREATE TABLE IF NOT EXISTS player_tags (
@@ -65,6 +68,21 @@ class DatabaseManager(config: DatabaseConfig) {
                         )
                     """)
                     Bukkit.getLogger().info("Tabela 'player_tags' verificada/criada no banco de dados $databaseName.")
+                }
+                // Dropar e recriar tabela player_collectibles para garantir estrutura correta
+                connection.createStatement().use { statement ->
+                    statement.execute("DROP TABLE IF EXISTS player_collectibles")
+                    statement.execute("""
+                        CREATE TABLE player_collectibles (
+                            uuid VARCHAR(36),
+                            collectible_id VARCHAR(50),
+                            active_pet VARCHAR(50) NULL,
+                            active_particle VARCHAR(50) NULL,
+                            PRIMARY KEY (uuid, collectible_id),
+                            FOREIGN KEY (uuid) REFERENCES players(uuid)
+                        )
+                    """)
+                    Bukkit.getLogger().info("Tabela 'player_collectibles' recriada no banco de dados $databaseName.")
                 }
             } catch (e: Exception) {
                 Bukkit.getLogger().severe("Erro ao criar tabelas no banco de dados $databaseName: ${e.message}")
@@ -99,6 +117,36 @@ class DatabaseManager(config: DatabaseConfig) {
                         }
                     } catch (alterException: Exception) {
                         Bukkit.getLogger().severe("Erro ao adicionar coluna 'coins' à tabela 'player_levels': ${alterException.message}")
+                        throw alterException
+                    }
+                }
+            }
+            // Verificar colunas de player_collectibles
+            try {
+                connection.createStatement().use { statement ->
+                    statement.executeQuery("SELECT collectible_id, active_pet, active_particle FROM player_collectibles LIMIT 1")
+                }
+            } catch (e: Exception) {
+                if (e.message?.contains("Unknown column 'collectible_id'") == true ||
+                    e.message?.contains("Unknown column 'active_pet'") == true ||
+                    e.message?.contains("Unknown column 'active_particle'") == true) {
+                    try {
+                        connection.createStatement().use { statement ->
+                            statement.execute("DROP TABLE IF EXISTS player_collectibles")
+                            statement.execute("""
+                                CREATE TABLE player_collectibles (
+                                    uuid VARCHAR(36),
+                                    collectible_id VARCHAR(50),
+                                    active_pet VARCHAR(50) NULL,
+                                    active_particle VARCHAR(50) NULL,
+                                    PRIMARY KEY (uuid, collectible_id),
+                                    FOREIGN KEY (uuid) REFERENCES players(uuid)
+                                )
+                            """)
+                            Bukkit.getLogger().info("Tabela 'player_collectibles' recriada com colunas corretas no banco de dados $databaseName.")
+                        }
+                    } catch (alterException: Exception) {
+                        Bukkit.getLogger().severe("Erro ao recriar tabela 'player_collectibles': ${alterException.message}")
                         throw alterException
                     }
                 }
@@ -267,6 +315,116 @@ class DatabaseManager(config: DatabaseConfig) {
 
     fun getAvailableTags(): List<String> {
         return listOf("membro") // Adicione mais tags aqui no futuro
+    }
+
+    fun hasCollectible(uuid: UUID, collectibleId: String): Boolean {
+        dataSource.connection.use { connection ->
+            try {
+                connection.prepareStatement("SELECT COUNT(*) FROM player_collectibles WHERE uuid = ? AND collectible_id = ?").use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.setString(2, collectibleId)
+                    statement.executeQuery().use { result ->
+                        if (result.next()) {
+                            return result.getInt(1) > 0
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Bukkit.getLogger().severe("Erro ao verificar coletável $collectibleId para UUID $uuid: ${e.message}")
+                throw e
+            }
+            return false
+        }
+    }
+
+    fun addCollectible(uuid: UUID, collectibleId: String) {
+        dataSource.connection.use { connection ->
+            try {
+                connection.prepareStatement("INSERT INTO player_collectibles (uuid, collectible_id) VALUES (?, ?)").use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.setString(2, collectibleId)
+                    statement.executeUpdate()
+                    Bukkit.getLogger().info("Coletável $collectibleId adicionado para UUID $uuid")
+                }
+            } catch (e: Exception) {
+                Bukkit.getLogger().severe("Erro ao adicionar coletável $collectibleId para UUID $uuid: ${e.message}")
+                throw e
+            }
+        }
+    }
+
+    fun setActivePet(uuid: UUID, petId: String?) {
+        dataSource.connection.use { connection ->
+            try {
+                connection.prepareStatement("INSERT INTO player_collectibles (uuid, collectible_id, active_pet) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE active_pet = ?").use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.setString(2, "dummy")
+                    statement.setString(3, petId)
+                    statement.setString(4, petId)
+                    statement.executeUpdate()
+                    Bukkit.getLogger().info("Pet ativo definido como $petId para UUID $uuid")
+                }
+            } catch (e: Exception) {
+                Bukkit.getLogger().severe("Erro ao definir pet ativo $petId para UUID $uuid: ${e.message}")
+                throw e
+            }
+        }
+    }
+
+    fun getActivePet(uuid: UUID): String? {
+        dataSource.connection.use { connection ->
+            try {
+                connection.prepareStatement("SELECT active_pet FROM player_collectibles WHERE uuid = ? LIMIT 1").use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.executeQuery().use { result ->
+                        if (result.next()) {
+                            return result.getString("active_pet")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Bukkit.getLogger().severe("Erro ao recuperar pet ativo para UUID $uuid: ${e.message}")
+                throw e
+            }
+            return null
+        }
+    }
+
+    fun setActiveParticle(uuid: UUID, particleId: String?) {
+        dataSource.connection.use { connection ->
+            try {
+                connection.prepareStatement("INSERT INTO player_collectibles (uuid, collectible_id, active_particle) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE active_particle = ?").use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.setString(2, "dummy")
+                    statement.setString(3, particleId)
+                    statement.setString(4, particleId)
+                    statement.executeUpdate()
+                    Bukkit.getLogger().info("Partícula ativa definida como $particleId para UUID $uuid")
+                }
+            } catch (e: Exception) {
+                Bukkit.getLogger().severe("Erro ao definir partícula ativa $particleId para UUID $uuid: ${e.message}")
+                throw e
+            }
+        }
+    }
+
+    fun getActiveParticle(uuid: UUID): String? {
+        dataSource.connection.use { connection ->
+            try {
+                connection.prepareStatement("SELECT active_particle FROM player_collectibles WHERE uuid = ? LIMIT 1").use { statement ->
+                    statement.setString(1, uuid.toString())
+                    statement.executeQuery().use { result ->
+                        if (result.next()) {
+                            return result.getString("active_particle")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Bukkit.getLogger().severe("Erro ao recuperar partícula ativa para UUID $uuid: ${e.message}")
+                throw e
+            }
+            return null
+        }
     }
 
     fun getConnection(): Connection {
